@@ -1,1 +1,20 @@
+# Importing Libs
+import os
+import numpy as np # Linear Algebra
+import pandas as pd # Data Manipulation
+pd.set_option('MAX_ROWS', None) # Setting pandas to display a N number of columns
+from collections import Counter # Data Manipulation
+import seaborn as sns # Data Viz
+import matplotlib.pyplot as plt # Data Viz
+from sklearn import tree # Modelling a tree
+from sklearn.impute import SimpleImputer # Perform Imputation
+from imblearn.over_sampling import SMOTE # Perform oversampling
+from sklearn.preprocessing import OneHotEncoder # Perform OneHotEnconding
+from sklearn.model_selection import StratifiedKFold, cross_val_score,cross_val_predict # Cross Validation
+from sklearn.linear_model import LogisticRegression # Modelling
+from sklearn.metrics import classification_report, roc_auc_score,precision_score,recall_score # Evaluating the Model
 
+
+#warnings
+import warnings
+warnings.filterwarnings("ignore")
