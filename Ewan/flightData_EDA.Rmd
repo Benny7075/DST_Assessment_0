@@ -1,0 +1,304 @@
+---
+title: "R Notebook"
+author: "Ewan Mitchell"
+output: html_notebook
+fig_width: 15
+fig_height: 15 
+---
+
+```{r}
+library(readr)
+library(dplyr)       # For data manipulation
+library(ggplot2)     # For data visualization
+library(summarytools) # For summary statistics
+library(ggplot2)
+library(tidyr)
+library(knitr)
+library(maps)
+library(mapdata)
+library(corrplot)
+library(factoextra)
+library(RColorBrewer)
+```
+
+
+
+```{r}
+flightData <- read_csv("C:/Users/USER/OneDrive/Bristol Year 4/Data Science Toolbox/Group Assessments/full_data_flightdelay.csv")
+```
+
+
+```{r}
+colnames(flightData) 
+```
+
+
+```{r, results='asis'}
+
+column_descriptions <- data.frame(
+  Variable = c(
+    "MONTH", "DAY_OF_WEEK", "DEP_DEL15", "DEP_TIME_BLK", "DISTANCE_GROUP", 
+    "SEGMENT_NUMBER", "CONCURRENT_FLIGHTS", "NUMBER_OF_SEATS", "CARRIER_NAME", 
+    "AIRPORT_FLIGHTS_MONTH", "AIRLINE_FLIGHTS_MONTH", "AIRLINE_AIRPORT_FLIGHTS_MONTH", 
+    "AVG_MONTHLY_PASS_AIRPORT", "AVG_MONTHLY_PASS_AIRLINE", "FLT_ATTENDANTS_PER_PASS", 
+    "GROUND_SERV_PER_PASS", "PLANE_AGE", "DEPARTING_AIRPORT", "LATITUDE", 
+    "LONGITUDE", "PREVIOUS_AIRPORT", "PRCP", "SNOW", "SNWD", "TMAX", "AWND"
+  ),
+  Description = c(
+    "Month", "Day of Week", "(TARGET) Departure Delay Indicator, 15 Minutes or More (1=Yes)", 
+    "CRS Departure Time Block, Hourly Intervals", "Distance group to be flown by departing aircraft", 
+    "The segment that this tail number is on for the day", "Concurrent flights leaving from the airport in the same departure block", 
+    "Number of seats on the aircraft", "Carrier", "Avg Airport Flights per Month", 
+    "Avg Airline Flights per Month", "Avg Flights per month for Airline AND Airport", 
+    "Avg Passengers for the departing airport for the month", "Avg Passengers for airline for month", 
+    "Flight attendants per passenger for airline", "Ground service employees (service desk) per passenger for airline", 
+    "Age of departing aircraft", "Departing Airport", "Latitude of departing airport", 
+    "Longitude of departing airport", "Previous airport that aircraft departed from", 
+    "Inches of precipitation for day", "Inches of snowfall for day", 
+    "Inches of snow on ground for day", "Max temperature for day", "Max wind speed for day"
+  )
+)
+
+kable(column_descriptions, format = "html", caption = "Column Descriptions")
+```
+
+```{r}
+glimpse(flightData)
+
+head(flightData)
+
+dfSummary(flightData)
+
+missing_values <- flightData %>%
+  summarise_all(~ sum(is.na(.)))
+
+missing_values
+```
+
+
+```{r}
+# Bar chart of carrier vs proportion of delays
+delayed_proportions <- flightData %>%
+  group_by(CARRIER_NAME) %>%
+  summarize(proportion_delayed = mean(DEP_DEL15 == 1))
+
+ggplot(delayed_proportions, aes(x = CARRIER_NAME, y = proportion_delayed)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(
+    title = "Proportion of Delayed Flights by Carrier",
+    x = "Carrier",
+    y = "Proportion Delayed"
+  ) +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+
+delayed_proportions <- flightData %>%
+  group_by(MONTH) %>%
+  summarize(proportion_delayed = mean(DEP_DEL15 == 1))
+
+#flightData$MONTH <- factor(flightData$MONTH, levels = month.abb)
+
+ggplot(delayed_proportions, aes(x = MONTH, y = proportion_delayed)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(
+    title = "Proportion of Delayed Flights by Month",
+    x = "Month",
+    y = "Proportion Delayed"
+  ) +
+  theme_minimal() + 
+ scale_x_discrete(limits = month.abb)
+
+```
+
+```{r}
+delayed_proportions <- flightData %>%
+  group_by(DAY_OF_WEEK) %>%
+  summarize(proportion_delayed = mean(DEP_DEL15 == 1))
+
+day_order <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
+#flightData$DAY_OF_WEEK <- factor(flightData$DAY_OF_WEEK, levels = day_order)
+
+ggplot(delayed_proportions, aes(x = DAY_OF_WEEK, y = proportion_delayed)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(
+    title = "Proportion of Delayed Flights by Day of the Week",
+    x = "Day of the Week",
+    y = "Proportion Delayed"
+  ) +
+  theme_minimal() + 
+  scale_x_discrete(limits = day_order)
+
+```
+
+```{r}
+# Histogram of DEP_TIME_BLK
+ggplot(flightData, aes(x = DEP_TIME_BLK)) +
+  geom_bar(fill = "blue") +
+  labs(
+    title = "Distribution of Flights by Departure Time Block",
+    x = "Derpature Time Block",
+    y = "Count"
+  ) +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+
+delayed_flights <- flightData %>%
+  filter(DEP_DEL15 == 1)
+
+# Create a histogram of DEP_TIME_BLK for delayed flights
+ggplot(delayed_flights, aes(x = DEP_TIME_BLK, fill = DEP_TIME_BLK)) +
+  geom_bar() +
+  labs(
+    title = "Distribution of Delayed Flights by Departure Time Block",
+    x = "Departure Time Block",
+    y = "Count"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+```{r}
+
+us_map <- map_data("usa") # map of the US
+
+map_plot <- ggplot() +
+  geom_polygon(data = us_map, aes(x = long, y = lat, group = group), fill = NA, color = "black", alpha = 0.5) +
+  coord_fixed(ratio = 1)   # Ensure aspect ratio is 1:1
+
+ggplot(delayed_flights, aes(x = LONGITUDE, y = LATITUDE)) +
+  geom_density_2d() +
+  coord_fixed(ratio = 1) +  # Ensure aspect ratio is 1:1
+  labs(title = "Density Plot of Departing Airports with Delayed Flights") +
+  geom_polygon(data = us_map, aes(x = long, y = lat, group = group), fill = "white", color = "black", alpha = 0.5) 
+# (slow)
+
+```
+
+
+```{r, fig.width=17}
+
+# Calculate the count of delayed flights by departing airport
+delayed_counts <- delayed_flights %>%
+  group_by(DEPARTING_AIRPORT) %>%
+  summarize(delayed_count = n())
+
+total_counts <- flightData %>%
+  group_by(DEPARTING_AIRPORT) %>%
+  summarize(total_count = n())
+
+airport_proportions <- left_join(delayed_counts, total_counts, by = "DEPARTING_AIRPORT") %>%
+  mutate(proportion_delayed = delayed_count / total_count) %>%
+  arrange(desc(proportion_delayed))
+
+ggplot(airport_proportions, aes(x = reorder(DEPARTING_AIRPORT, -proportion_delayed), y = proportion_delayed)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(
+    title = "Proportion of Delayed Flights by Departing Airport",
+    x = "Departing Airport",
+    y = "Proportion Delayed"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```
+
+```{r}
+
+ # IQR method
+iqr <- IQR(airport_proportions$delayed_count)
+q3 <- quantile(airport_proportions$delayed_count, 0.75)
+
+upper_bound <- q3 + 1.5 * iqr
+
+outliers <- airport_proportions %>%
+  filter(delayed_count > upper_bound)
+
+print(outliers)
+
+# z-score method
+
+outliers <- airport_proportions %>%
+  filter(scale(delayed_count) > 1.96) 
+
+print(outliers)
+```
+
+
+```{r, fig.width=15}
+
+airport_vars <- c(
+  "AIRPORT_FLIGHTS_MONTH", "AIRLINE_FLIGHTS_MONTH", "AIRLINE_AIRPORT_FLIGHTS_MONTH",
+  "AVG_MONTHLY_PASS_AIRPORT", "AVG_MONTHLY_PASS_AIRLINE",
+  "FLT_ATTENDANTS_PER_PASS", "GROUND_SERV_PER_PASS", "PLANE_AGE",
+  "LATITUDE", "LONGITUDE", "DEP_DEL15"
+)
+
+filtered_data <- flightData %>%
+  select(all_of(airport_vars))
+
+corr <- cor(filtered_data)
+
+corrplot(corr, method = "color", type = "upper", order = "hclust", tl.cex = 0.6, title = "Correlation Plot of airport Features + DEP_DEL15")
+
+
+```
+
+```{r}
+
+outpca <- prcomp(filtered_data, center = TRUE, scale. = TRUE)
+
+p1 <- fviz_eig(outpca)
+p1
+
+p2 <- fviz_pca_var(outpca,
+                   axes = c(1, 2), 
+                   col.var = "contrib", 
+                   gradient.cols = brewer.pal(n = 10, name = "RdBu"),
+                   repel = TRUE
+)
+p2
+
+```
+
+
+
+```{r}
+weather_vars <- c("PRCP",	"SNOW",	"SNWD",	"TMAX", "AWND", "DEP_DEL15")
+
+filtered_data <- flightData %>%
+  select(all_of(weather_vars))
+
+corr <- cor(filtered_data)
+
+corrplot(corr, method = "color", type = "upper", order = "hclust", tl.cex = 0.6, title = "Correlation Plot of Weather Features + DEP_DEL15")
+```
+
+```{r}
+
+outpca <- prcomp(filtered_data, center = TRUE, scale. = TRUE)
+
+p1 <- fviz_eig(outpca)
+p1
+
+p2 <- fviz_pca_var(outpca,
+                   axes = c(1, 2), 
+                   col.var = "contrib", 
+                   gradient.cols = brewer.pal(n = 10, name = "RdBu"),
+                   repel = TRUE
+)
+p2
+
+```
