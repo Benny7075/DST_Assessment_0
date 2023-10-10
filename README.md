@@ -6,7 +6,7 @@
 * Abbie
 * Arun
 
-Equal equity
+Equal equity.
 
 ## Reading order and requirements
 
@@ -16,8 +16,8 @@ All report content is in the directory:
 
 The report takes the following structure:
 
-* 01-Data.Rmd
-* 02-R_analysis.Rmd
+* 01-Introduction and Data.html
+* 02-flightData_EDA.Rmd
 * 03-Python_Analysis.ipynb
 * 04-Wrapup.Rmd
 

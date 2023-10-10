@@ -1,9 +1,11 @@
 ---
-title: "R Notebook"
+title: "R Flight Data EDA"
 author: "Ewan Mitchell"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 fig_width: 15
-fig_height: 15 
+fig_height: 15
 ---
 
 ```{r}
@@ -21,13 +23,17 @@ library(factoextra)
 library(RColorBrewer)
 ```
 
+## 2019 Airline Delays with Weather and Airport Detail
+This data set is about flight delays in the United States, providing  detailed information about airline, weather, airport and employment conditions. The aim of exploring this data set is to study the correlation between features and flight delays with the eventual goal, in Assessment 1, of performing a binary classification on this data set.
 
+
+Data set available at "https://www.kaggle.com/datasets/threnjen/2019-airline-delays-and-cancellations".
 
 ```{r}
 flightData <- read_csv("C:/Users/USER/OneDrive/Bristol Year 4/Data Science Toolbox/Group Assessments/full_data_flightdelay.csv")
 ```
 
-
+We present the features of the data set. 
 ```{r}
 colnames(flightData) 
 ```
@@ -67,7 +73,7 @@ glimpse(flightData)
 
 head(flightData)
 
-dfSummary(flightData)
+summary(flightData)
 
 missing_values <- flightData %>%
   summarise_all(~ sum(is.na(.)))
@@ -75,7 +81,7 @@ missing_values <- flightData %>%
 missing_values
 ```
 
-
+### Examining the proportion of delays by carrier.
 ```{r}
 # Bar chart of carrier vs proportion of delays
 delayed_proportions <- flightData %>%
@@ -94,6 +100,9 @@ ggplot(delayed_proportions, aes(x = CARRIER_NAME, y = proportion_delayed)) +
 
 ```
 
+We see that "Frontier Airlines" and "JetBlue Airways" have the highest proportions of delayed flights, while "Hawaiian Airlines" has the lowest.
+
+### Examining the proportion of delays by month of the year.
 ```{r}
 
 delayed_proportions <- flightData %>%
@@ -114,6 +123,10 @@ ggplot(delayed_proportions, aes(x = MONTH, y = proportion_delayed)) +
 
 ```
 
+We can observe a small peak at June, which could be due to the start of the holiday season., while September and November have the lowest - which are typically not holiday months.
+
+
+### Examining the proportion of delays by day of the week.
 ```{r}
 delayed_proportions <- flightData %>%
   group_by(DAY_OF_WEEK) %>%
@@ -135,6 +148,9 @@ ggplot(delayed_proportions, aes(x = DAY_OF_WEEK, y = proportion_delayed)) +
 
 ```
 
+The appears to only be slight variation between days of the week.
+
+### Examining the number of flights by departure time block.
 ```{r}
 # Histogram of DEP_TIME_BLK
 ggplot(flightData, aes(x = DEP_TIME_BLK)) +
@@ -149,6 +165,9 @@ ggplot(flightData, aes(x = DEP_TIME_BLK)) +
 
 ```
 
+We see that there is a slight peak of flights at departure blocks between 6am - 9am, while between 9am -9pm it appears to be roughly uniform and with very few delays between 9pm - 6am. 
+
+### Examining the proportion of delays by departure block.
 ```{r}
 
 delayed_flights <- flightData %>%
@@ -166,8 +185,9 @@ ggplot(delayed_flights, aes(x = DEP_TIME_BLK, fill = DEP_TIME_BLK)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+We observe that this distribution looks like a skewed Gaussian distribution about a peak at 5pm-6pm which experiences the highest proportion of delayed flights.
 
-
+### Density plot of Departing Airplorts with Delayed flights
 ```{r}
 
 us_map <- map_data("usa") # map of the US
@@ -185,7 +205,9 @@ ggplot(delayed_flights, aes(x = LONGITUDE, y = LATITUDE)) +
 
 ```
 
+We see that there are hot spots particularly in the east coast and west coast experiencing the highets density of flight delays.
 
+### Examining the proportion of delayed flights by departing airport
 ```{r, fig.width=17}
 
 # Calculate the count of delayed flights by departing airport
@@ -215,6 +237,8 @@ ggplot(airport_proportions, aes(x = reorder(DEPARTING_AIRPORT, -proportion_delay
 
 ```
 
+We now use two methods to study the upper outliers of this graph.
+
 ```{r}
 
  # IQR method
@@ -236,8 +260,10 @@ outliers <- airport_proportions %>%
 print(outliers)
 ```
 
+### Examining the correlation between airport information + flight delays
+We look at only numeric features that concern the departing airport and airline and the flight departures, and perform correlation analysis and PCA.
 
-```{r, fig.width=15}
+```{r}
 
 airport_vars <- c(
   "AIRPORT_FLIGHTS_MONTH", "AIRLINE_FLIGHTS_MONTH", "AIRLINE_AIRPORT_FLIGHTS_MONTH",
@@ -273,7 +299,10 @@ p2
 
 ```
 
+We do not observe any strong correlation between the flight delays variable - "DEP_DEL15" and the other variables.
 
+### Examining the correlation between weather information + flight delays
+We look at only numeric features that concern the weather and the flight departures, and perform correlation analysis and PCA.
 
 ```{r}
 weather_vars <- c("PRCP",	"SNOW",	"SNWD",	"TMAX", "AWND", "DEP_DEL15")
@@ -302,3 +331,5 @@ p2 <- fviz_pca_var(outpca,
 p2
 
 ```
+
+For instance, we can clearly observe a positive correlation between "PRCP" - Inches of precipitation for day and flight delays and also a slightly smaller psoitive correlation between "AWND" - max wind speed for day and flight delays.
