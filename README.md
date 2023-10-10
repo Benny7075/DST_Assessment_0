@@ -39,12 +39,9 @@ pip3 install -r requirements.txt
 
 ## Evidence
 
-Our working is shown in our own directories,
+Our working is shown in our own directories.
 
-* RachelR/test.Rmd
-* PeterP/work.ipynb
 
-Rachel R wrote the R analysis, Peter P wrote the Python analysis, and we wrote the Data processing and wrapup together after examination of the whole analysis.
 
 ## Reflections
 
