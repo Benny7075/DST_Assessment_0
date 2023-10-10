@@ -1,1 +1,2 @@
-
+For this project we explored datasets in the domains of politics and transport. We found that the more insightful political datasets weren't as big as those on transport, this is probably due to the political datasets containing more qualitative datatypes and needed consent from individuals to obtain data.
+The format we found in both domains were similar, however, the travel datasets were more likely to be in an excel spreadsheet with a better layout, thus making it easier for us to perform EDA. The final dataset on predicting flight delays explored by our group contained a large amount of datapoints that we thought could give us extended research into predictive anaylsis. 
